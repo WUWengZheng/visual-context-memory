@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Visual Context Memory</title>
+    <link rel="stylesheet" href="/viewer/styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>Visual Context Memory</h1>
+        </div>
+        <div class="project-switch">
+          <label>Project <select id="project-select" aria-label="Project"></select></label>
+          <button id="new-project" type="button">New project</button>
+        </div>
+        <label class="search">
+          <span>Search</span>
+          <input id="search" type="search" placeholder="Search memory…" autocomplete="off">
+        </label>
+      </header>
+      <section class="filters" aria-label="Memory filters">
+        <label>Type
+          <select id="type-filter">
+            <option value="">All types</option>
+            <option>entity</option>
+            <option>fact</option>
+            <option>decision</option>
+            <option>constraint</option>
+            <option>requirement</option>
+            <option>issue</option>
+            <option>resolution</option>
+          </select>
+        </label>
+        <label>Lifecycle
+          <select id="status-filter">
+            <option value="">Current states</option>
+            <option>candidate</option>
+            <option>active</option>
+            <option>outdated</option>
+            <option>superseded</option>
+            <option>rejected</option>
+            <option>deleted</option>
+          </select>
+        </label>
+        <label><input id="locked-filter" type="checkbox"> Locked</label>
+        <label><input id="pinned-filter" type="checkbox"> Pinned</label>
+        <span class="filter-note">Rejected memories are hidden by default.</span>
+      </section>
+      <div id="panel-tools" class="panel-tools">
+        <button type="button" data-open-panel="library"
+          aria-controls="library-panel" aria-expanded="false">Open Library</button>
+        <button type="button" data-open-panel="inspector"
+          aria-controls="inspector-panel" aria-expanded="false">Open Inspector</button>
+      </div>
+      <section class="workspace">
+        <aside class="library panel" id="library-panel">
+          <div class="panel-title">
+            <h2>Memory Library</h2>
+            <button id="new-memory" type="button" class="primary-action" disabled>New memory</button>
+            <button type="button" class="drawer-close"
+              data-close-panel="library" aria-label="Close Library">Close</button>
+          </div>
+          <p id="library-count" class="range-count"></p>
+          <p id="creation-feedback" class="range-count" role="status" aria-live="polite" tabindex="0" hidden></p>
+          <div id="memory-list" class="memory-list"></div>
+          <div id="conflicts" class="conflict-list" aria-label="Existing Conflicts"></div>
+        </aside>
+        <section class="graph-panel panel">
+          <div class="graph-toolbar">
+            <div class="mode-buttons" role="group" aria-label="Graph mode">
+              <button data-mode="project" type="button">Project</button>
+              <button data-mode="one" type="button">1-hop</button>
+              <button data-mode="two" type="button">2-hop</button>
+            </div>
+            <div>
+              <button id="fit" type="button">Fit</button>
+              <button id="reset" type="button">Reset</button>
+              <button id="focus" type="button">Focus</button>
+            </div>
+          </div>
+          <div class="graph-stage">
+            <div id="cy" aria-label="Memory relation graph"></div>
+            <div id="graph-message" class="graph-message" hidden>
+              <span id="graph-message-text"></span>
+            </div>
+          </div>
+          <details class="legend">
+            <summary>Legend</summary>
+            <div>
+              <span class="shape entity">Entity</span>
+              <span class="shape fact">Fact</span>
+              <span class="shape decision">Decision</span>
+              <span class="shape constraint">Constraint</span>
+              <span class="shape requirement">Requirement</span>
+              <span class="shape issue">Issue</span>
+              <span class="shape resolution">Resolution</span>
+              <span>🔒 Locked</span><span>⌖ Pinned</span>
+              <span>┄ Outdated / Superseded</span><span>┈ Candidate</span>
+            </div>
+          </details>
+        </section>
+        <aside class="inspector panel" id="inspector-panel">
+          <div class="panel-title">
+            <h2>Inspector</h2>
+            <button type="button" class="drawer-close"
+              data-close-panel="inspector" aria-label="Close Inspector">Close</button>
+          </div>
+          <div id="inspector-content"></div>
+        </aside>
+      </section>
+      <footer class="statusbar">
+        <span id="status-message">Server connected · loading workspace…</span>
+        <button id="retry" hidden type="button">Retry</button>
+        <span>Local editor · Ctrl/⌘ F search · Esc deselect</span>
+      </footer>
+    </main>
+    <dialog id="creation-dialog" aria-labelledby="creation-title"></dialog>
+    <script type="importmap">
+      {"imports":{"cytoscape":"/viewer/vendor/cytoscape.esm.min.mjs"}}
+    </script>
+    <script type="module" src="/viewer/app.mjs"></script>
+  </body>
+</html>
