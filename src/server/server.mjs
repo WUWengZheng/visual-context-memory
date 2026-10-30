@@ -12,6 +12,7 @@ import { serveViewerAsset } from './static-viewer.mjs';
 import { assertLocalRequest } from './write-boundary.mjs';
 import { EditorOperationService } from '../services/editor-operation-service.mjs';
 import { ProjectService } from '../services/project-service.mjs';
+import { RecallService } from '../services/recall-service.mjs';
 
 export const DEFAULT_HOST = '127.0.0.1';
 export const DEFAULT_PORT = 4173;
@@ -28,7 +29,8 @@ export function createLocalServer({ dbPath, port = DEFAULT_PORT, host = DEFAULT_
   const actorService = new ViewerActorService(databaseStore);
   const editorService = new EditorOperationService(databaseStore, memoryService, conflictService);
   const projectService = new ProjectService(databaseStore);
-  const router = createRouter({ readService, graphService, memoryService, conflictService, actorService, editorService, projectService });
+  const recallService = new RecallService(databaseStore);
+  const router = createRouter({ readService, graphService, memoryService, conflictService, actorService, editorService, projectService, recallService });
   const server = http.createServer((request, response) => {
     try { assertLocalRequest(request); } catch (error) { sendError(response, error); return; }
     if (serveViewerAsset(request, response)) return;
@@ -38,7 +40,7 @@ export function createLocalServer({ dbPath, port = DEFAULT_PORT, host = DEFAULT_
 
   return {
     server,
-    services: { memoryService, conflictService, readService, graphService, actorService, editorService, projectService },
+    services: { memoryService, conflictService, readService, graphService, actorService, editorService, projectService, recallService },
     async start() {
       if (started) return this.address();
       actorService.getOrCreateUserActor();

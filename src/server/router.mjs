@@ -60,7 +60,7 @@ function compactOptions(body, names) {
   return Object.fromEntries(names.filter((name) => Object.hasOwn(body, name)).map((name) => [name, body[name]]));
 }
 
-export function createRouter({ readService, graphService, memoryService, conflictService, actorService, editorService, projectService }) {
+export function createRouter({ readService, graphService, memoryService, conflictService, actorService, editorService, projectService, recallService }) {
   return async function route(request, response) {
     const url = new URL(request.url, 'http://127.0.0.1');
     const { pathname, searchParams } = url;
@@ -68,6 +68,17 @@ export function createRouter({ readService, graphService, memoryService, conflic
     if (!pathname.startsWith('/api/')) throw requestError('ROUTE_NOT_FOUND', 'Route not found', 404);
     if (method === 'GET' && pathname === '/api/health') return sendJson(response, 200, readService.health());
     if (method === 'GET' && pathname === '/api/projects') return sendJson(response, 200, readService.listProjects());
+    if (method === 'GET' && pathname === '/api/recall') {
+      const queries = searchParams.getAll('q');
+      if (queries.length < 1 || queries.length > 5) throw requestError('INVALID_QUERY', 'Recall requires 1–5 q parameters');
+      queries.forEach((query) => requireText(query, 'q', MAX_SEARCH_LENGTH));
+      return sendJson(response, 200, recallService.recall({
+        projectId: searchParams.get('project'), queries, ...readFilters(searchParams),
+        view: searchParams.get('view') ?? 'full',
+        neighbors: parseInteger(searchParams.get('neighbors'), { name: 'neighbors', min: 0, max: 1, fallback: 0 }),
+        limit: parseInteger(searchParams.get('limit'), { name: 'limit', min: 1, max: 50, fallback: 20 }),
+      }));
+    }
     if (method === 'POST' && pathname === '/api/projects') {
       const body = await readJsonBody(request);
       return sendJson(response, 201, projectService.createProject(actorService.getOrCreateUserActor().id,
@@ -149,6 +160,9 @@ export function createRouter({ readService, graphService, memoryService, conflic
     }
     if (segments[1] === 'memories' && resourceId) {
       if (method === 'GET' && segments.length === 3) return sendJson(response, 200, readService.getMemoryDetail(resourceId));
+      if (method === 'GET' && segments.length === 4 && segments[3] === 'export') {
+        return sendJson(response, 200, readService.exportMemory(resourceId, { projectId: searchParams.get('project') }));
+      }
       if (method === 'GET' && segments[3] === 'matches') return sendJson(response, 200, readService.matchesMemory(resourceId, {
         projectId: searchParams.get('project'), ...readFilters(searchParams),
         query: searchParams.get('q') ? requireText(searchParams.get('q'), 'q', MAX_SEARCH_LENGTH) : null,

@@ -29,11 +29,19 @@ Routes never query SQLite directly. The composition root creates the Store and s
 | `GET /api/memories/:id` | Viewer Memory aggregate |
 | `GET /api/memories/:id/revisions`, `/events`, `/notes`, `/relations` | Memory audit/read facets |
 | `GET /api/search?project=&q=` | Current-memory FTS search |
+| `GET /api/recall?project=&q=&q=&neighbors=&limit=&view=` | Explainable multi-query keyword rank fusion; optional bounded one-hop and compact previews |
+| `GET /api/memories/:id/export?project=` | Read-only single-Memory Markdown document in a JSON envelope |
 | `GET /api/conflicts?project=` | Conflicts |
 | `GET /api/context-sessions?project=`, `/:id` | Context-session history |
 | `GET /api/graph?project=&memoryId=&type=&status=&locked=&pinned=&limit=&depth=` | Lightweight graph/subgraph |
 
 Memory detail includes the current revision/control state, current-revision sources, active relations, Notes, current MetricObservation, and revision count. Graph nodes contain only visualization fields; edges contain `id`, `source`, `target`, and `relationType`.
+
+Recall/export are additive, read-only endpoints. Existing search arrays, pagination and Viewer behavior are unchanged. Recall accepts 1–5 repeated `q` parameters (200 characters each), limit 1–50, neighbors 0–1, and all four existing filters. Default lifecycle is active. Export requires matching project identity and caps the rendered document at 2 MiB (422 EXPORT_TOO_LARGE). See [recall/export contracts, ranking and coverage limits](./recall-and-export.md).
+
+Recall `view` defaults to `full` (old format unchanged). Opt-in `compact` returns bounded name/summary previews and up to eight source identities, with explicit preview/source omissions and exact Memory/Revision IDs. It does not return full description/value/Metric/evidence/Notes. Unknown values return INVALID_QUERY; clipping does not alter ranking or counts. Fetch exact Current detail before citation/editing. This is the only server API addition in the progressive-recall optimization; no new route or write behavior.
+
+Per-reply memory transparency is a client/Skill contract, not a new server route. The optional `src/client/reply-memory-session.mjs` collector uses existing GET recall/matches/detail endpoints only. The client SDK adds `recall` and an optional cancellation signal to `matches`, preserving existing calls. No usage-log write, Context Builder, automatic response hook or authenticated audit API is introduced. See [reply reporting scope and limitations](./reply-memory-report.md).
 
 ### Phase 6.1 compatible read-query additions
 

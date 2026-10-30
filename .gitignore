@@ -8,3 +8,8 @@ node_modules/
 *.sqlite-shm
 .DS_Store
 coverage/
+vcm-install.json
+Start Viewer.command
+Start Viewer.cmd
+Check Setup.command
+Check Setup.cmd

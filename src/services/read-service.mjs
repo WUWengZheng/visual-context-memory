@@ -1,4 +1,5 @@
 import { fail } from '../domain/errors.mjs';
+import { memoryMarkdown } from './markdown-export.mjs';
 
 export class ReadService {
   constructor(store) {
@@ -43,6 +44,21 @@ export class ReadService {
     return includeObservation ? revisions.map((revision) => ({ ...revision,
       metricObservation: this.store.getMetricObservation(revision.id), sources: this.store.listSourcesForRevision(revision.id),
     })) : revisions;
+  }
+
+  exportMemory(memoryId, { projectId } = {}) {
+    if (!projectId) fail('PROJECT_REQUIRED', 'Export requires one explicit project');
+    const memory = this.#memory(memoryId);
+    if (memory.projectId !== projectId) fail('PROJECT_MISMATCH', 'Memory belongs to another project');
+    const detail = this.getMemoryDetail(memoryId);
+    const markdown = memoryMarkdown(detail, this.store.getProject(projectId));
+    if (Buffer.byteLength(markdown) > 2 * 1024 * 1024) {
+      fail('EXPORT_TOO_LARGE', 'This Memory exceeds the 2 MiB export limit; no partial export was created');
+    }
+    return {
+      filename: `memory-${memory.id}-r${detail.currentRevision.revisionNumber}.md`,
+      memoryId, projectId, revisionId: detail.currentRevision.id, markdown,
+    };
   }
 
   getEvents(memoryId) {

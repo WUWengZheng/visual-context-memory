@@ -6,7 +6,8 @@ import { seedDemo } from '../src/demo/seed.mjs';
 import { VisualContextMemoryStore } from '../src/db/store.mjs';
 import { createLocalServer } from '../src/server/server.mjs';
 
-const { chromium } = await import(process.env.VCM_PLAYWRIGHT_MODULE ?? '/Users/wuwengzheng/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import(process.env.VCM_PLAYWRIGHT_MODULE
+  ?? path.join(os.homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs'));
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'vcm-simple-ui-'));
 const dbPath = path.join(directory, 'demo.db');
 const demo = seedDemo({ dbPath });

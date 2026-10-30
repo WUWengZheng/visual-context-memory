@@ -1066,7 +1066,7 @@ export class VisualContextMemoryStore {
     `).all(...parameters).map(mapRelation);
   }
 
-  listRelationsForMemoryIds({ projectId, memoryIds, includeDeleted = false, withinOnly = false } = {}) {
+  listRelationsForMemoryIds({ projectId, memoryIds, includeDeleted = false, withinOnly = false, limit = null } = {}) {
     requireUuid(projectId, 'projectId');
     requireBoolean(includeDeleted, 'includeDeleted');
     requireBoolean(withinOnly, 'withinOnly');
@@ -1075,12 +1075,16 @@ export class VisualContextMemoryStore {
     }
     const ids = memoryIds.map((id) => requireUuid(id, 'memoryId'));
     const placeholders = ids.map(() => '?').join(', ');
+    if (limit !== null) {
+      requireNumber(limit, 'limit', { min: 1, max: 200 });
+      if (!Number.isInteger(limit)) throw new TypeError('limit must be an integer');
+    }
     return this.database.prepare(`
       SELECT * FROM relations
       WHERE project_id = ? ${includeDeleted ? '' : "AND status = 'active'"}
         AND (source_memory_id IN (${placeholders}) ${withinOnly ? 'AND' : 'OR'} target_memory_id IN (${placeholders}))
-      ORDER BY created_at ASC, id ASC
-    `).all(projectId, ...ids, ...ids).map(mapRelation);
+      ORDER BY created_at ASC, id ASC ${limit === null ? '' : 'LIMIT ?'}
+    `).all(projectId, ...ids, ...ids, ...(limit === null ? [] : [limit])).map(mapRelation);
   }
 
   listSourcesForRelation(relationId) {

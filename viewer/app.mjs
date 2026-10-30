@@ -8,6 +8,7 @@ import { buildLibraryQuery } from './state.mjs';
 import { renderMemoryList } from './components/memory-list.mjs';
 import { createCreationController } from './creation-controller.mjs';
 import { createCreationView } from './components/creation-dialog.mjs';
+import { createMemoryExportController, downloadMarkdown } from './export-controller.mjs';
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
@@ -23,6 +24,7 @@ let controller;
 let editor;
 let creator;
 let creationView;
+let exporter;
 let auxiliaryKey = '';
 const graph = createGraph($('#cy'), {
   onNodeSelected: (id) => selectMemory(id),
@@ -41,6 +43,14 @@ function rangeText(page, count, label) {
 }
 
 function render(state) {
+  exporter?.sync();
+  const exportButton = $('#export-memory');
+  exportButton.hidden = !state.detail || state.detail.memory.id !== state.selectedMemoryId;
+  exportButton.disabled = Boolean(exporter?.state.loading || editor?.state.memoryId || state.detailLoading);
+  exportButton.textContent = exporter?.state.loading ? 'Preparing export…' : 'Export Markdown';
+  const exportFeedback = $('#export-feedback');
+  exportFeedback.textContent = exporter?.state.error ? errorMessage(exporter.state.error) : exporter?.state.message ?? '';
+  exportFeedback.hidden = !exportFeedback.textContent;
   const items = visibleLibrary(state);
   renderMemoryList(elements.list, items, state.selectedMemoryId,
     (id) => selectMemory(id, { ensureGraph: true }));
@@ -150,6 +160,15 @@ creator = createCreationController({
     : api.search(new URLSearchParams({ project: projectId, q: draft.name.slice(0, 200), page: 'true', limit: '100' }).toString()),
 });
 creationView = createCreationView($('#creation-dialog'), creator, $('#creation-feedback'));
+exporter = createMemoryExportController({
+  api, download: downloadMarkdown, onChange: () => render(controller.state),
+  getIdentity: () => {
+    const state = controller.state;
+    if (editor.state.memoryId || !state.detail || state.detail.memory.id !== state.selectedMemoryId) return null;
+    return { projectId: state.projectId, memoryId: state.selectedMemoryId, revisionId: state.detail.currentRevision.id };
+  },
+});
+$('#export-memory').addEventListener('click', () => exporter.export());
 
 function beginCreation(kind) {
   if (!editor.canLeave()) return;

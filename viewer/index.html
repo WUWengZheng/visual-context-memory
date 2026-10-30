@@ -105,9 +105,12 @@
         <aside class="inspector panel" id="inspector-panel">
           <div class="panel-title">
             <h2>Inspector</h2>
+            <button type="button" id="export-memory" hidden
+              title="Download the saved Revision, sources and notes. Unsaved edits are not exported.">Export Markdown</button>
             <button type="button" class="drawer-close"
               data-close-panel="inspector" aria-label="Close Inspector">Close</button>
           </div>
+          <p id="export-feedback" class="placeholder" role="status" aria-live="polite" tabindex="0" hidden></p>
           <div id="inspector-content"></div>
         </aside>
       </section>

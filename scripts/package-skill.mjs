@@ -7,10 +7,29 @@ import { spawnSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-export const rootFiles = ['LICENSE', 'SKILL.md', 'README.md', 'package.json', 'package-lock.json', '.gitignore'];
+export const rootFiles = ['LICENSE', 'SKILL.md', 'README.md', 'package.json', 'package-lock.json', '.gitignore',
+  'Install.command', 'Install.cmd'];
 export const referenceFiles = ['http-api.md', 'memory-editor.md', 'memory-schema.md', 'memory-lifecycle.md',
-  'conflict-rules.md', 'relation-types.md', 'schema-deviations.md', 'context-selection.md', 'release-readiness.md'];
+  'conflict-rules.md', 'relation-types.md', 'schema-deviations.md', 'context-selection.md', 'release-readiness.md',
+  'recall-and-export.md', 'reply-memory-report.md', 'open-source-recall-patterns.md'];
 const sourceDirectories = { src: ['.mjs', '.sql'], viewer: ['.mjs', '.css', '.html'], scripts: ['.mjs'], tests: ['.mjs'] };
+
+export function listSourceFiles(base = root) {
+  const entries = [...rootFiles, ...referenceFiles.map((file) => path.join('references', file))];
+  function walk(relative, extensions) {
+    for (const entry of fs.readdirSync(path.join(base, relative), { withFileTypes: true })) {
+      const name = path.join(relative, entry.name);
+      if (entry.isSymbolicLink()) throw new Error(`Symlink not allowed in release sources: ${name}`);
+      if (entry.isDirectory()) walk(name, extensions);
+      else if (entry.isFile() && extensions.includes(path.extname(name))) entries.push(name);
+    }
+  }
+  for (const [directory, extensions] of Object.entries(sourceDirectories)) walk(directory, extensions);
+  for (const name of entries) {
+    if (!fs.lstatSync(path.join(base, name)).isFile()) throw new Error(`Expected regular source file: ${name}`);
+  }
+  return entries.sort();
+}
 
 export function packageSkill(output) {
   const target = path.resolve(output);
@@ -24,24 +43,20 @@ export function packageSkill(output) {
     const outputPath = path.join(destination, relative);
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.copyFileSync(source, outputPath);
-    fs.chmodSync(outputPath, 0o644);
+    fs.chmodSync(outputPath, relative.endsWith('.command') ? 0o755 : 0o644);
     // Stable contents and timestamps; no local permissions or account names in archive.
     fs.utimesSync(outputPath, 0, 0);
     entries.push(relative);
   }
-  function walk(relative, extensions) {
-    for (const entry of fs.readdirSync(path.join(root, relative), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-      const name = path.join(relative, entry.name);
-      if (entry.isSymbolicLink()) throw new Error(`Symlink not allowed in release sources: ${name}`);
-      if (entry.isDirectory()) walk(name, extensions);
-      else if (entry.isFile() && extensions.includes(path.extname(entry.name))) copy(name);
-    }
-  }
   try {
-    for (const file of rootFiles) copy(file);
-    for (const file of referenceFiles) copy(path.join('references', file));
-    for (const [directory, extensions] of Object.entries(sourceDirectories)) walk(directory, extensions);
+    for (const file of listSourceFiles()) copy(file);
     fs.mkdirSync(path.dirname(target), { recursive: true });
+    if (target.endsWith('.zip')) {
+      const result = spawnSync('zip', ['-X', '-q', target,
+        ...entries.map((entry) => `visual-context-memory/${entry}`)], { cwd: stage, encoding: 'utf8' });
+      if (result.status !== 0) throw new Error(result.stderr || 'ZIP packaging requires the zip command');
+      return { output: target, files: entries.length, format: 'zip' };
+    }
     // Archive only the explicit regular-file list; no directory metadata or databases.
     const version = spawnSync('tar', ['--version'], { encoding: 'utf8' });
     const ownership = version.stdout?.includes('bsdtar')

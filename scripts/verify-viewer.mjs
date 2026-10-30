@@ -7,7 +7,8 @@ import path from 'node:path';
 import { createLocalServer } from '../src/server/server.mjs';
 import { VisualContextMemoryStore } from '../src/db/store.mjs';
 
-const { chromium } = await import(process.env.VCM_PLAYWRIGHT_MODULE ?? '/Users/wuwengzheng/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import(process.env.VCM_PLAYWRIGHT_MODULE
+  ?? path.join(os.homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs'));
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'vcm-browser-'));
 const store = new VisualContextMemoryStore({ dbPath: path.join(directory, 'test.db') });
 const user = store.createActor({ actorType: 'user', displayName: 'Browser test' });

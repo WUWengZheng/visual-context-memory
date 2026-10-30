@@ -8,7 +8,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "start": "node src/server/main.mjs",
+    "start": "node scripts/vcm.mjs start",
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/vcm.mjs doctor",
     "demo:seed": "node src/demo/seed.mjs",
     "test": "node --test"
   },

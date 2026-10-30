@@ -45,10 +45,13 @@ export function createApi(fetcher = (...args) => fetch(...args)) {
     memories: (query, signal) => request(`/api/memories?${query}`, signal),
     graph: (query, signal) => request(`/api/graph?${query}`, signal),
     search: (query, signal) => request(`/api/search?${query}`, signal),
+    recall: (query, signal) => request(`/api/recall?${query}`, signal),
     detail: (id, signal) => request(`/api/memories/${encodeURIComponent(id)}`, signal),
+    exportMemory: (id, projectId, signal) => request(
+      `/api/memories/${encodeURIComponent(id)}/export?project=${encodeURIComponent(projectId)}`, signal),
     revisions: (id, signal) => request(`/api/memories/${encodeURIComponent(id)}/revisions?includeObservation=true`, signal),
     conflicts: (projectId, signal) => request(`/api/conflicts?project=${encodeURIComponent(projectId)}`, signal),
-    matches: (id, query) => request(`/api/memories/${encodeURIComponent(id)}/matches?${query}`),
+    matches: (id, query, signal) => request(`/api/memories/${encodeURIComponent(id)}/matches?${query}`, signal),
     write: (path, body = {}) => request(path, undefined, body),
   };
 }
